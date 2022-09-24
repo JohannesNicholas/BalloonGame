@@ -66,6 +66,8 @@ bullet_speeds = [] #create a list to store the bullet speeds
 missed = 0 #set the missed to 0, this is the number of missed shots
 missed_text = canvas.create_text(400, 50, text="Missed: " + str(missed), font=("Arial", 20)) #create the score text
 
+gameOver = False #true when the balloon is popped
+
 
 #function when button is pressed
 def key_down(event):
@@ -114,7 +116,14 @@ window.bind("<KeyRelease>", key_up)
 
 #update function that is called 60 times a second
 def update():
+
+    #don't update if the game is over
+    if gameOver:
+        return
+
     global missed
+    global balloon_change_counter
+    global balloon_direction
 
 
     bullets_to_remove = [] #create a list to store the bullets to remove
@@ -127,6 +136,17 @@ def update():
         if canvas.coords(bullets[i])[0] > 800:
             #add the bullet to the list of bullets to remove
             bullets_to_remove.append(i)
+
+        #if the bullet is touching the balloon
+        if canvas.coords(bullets[i])[0] > 700 and \
+            canvas.coords(bullets[i])[0] < 725 and \
+            canvas.coords(bullets[i])[1] > canvas.coords(balloon)[1] and \
+            canvas.coords(bullets[i])[3] < canvas.coords(balloon)[3]:
+
+            #end the game
+            end_game()
+
+        
     
     #remove the bullets
     for i in bullets_to_remove:
@@ -137,6 +157,33 @@ def update():
 
         #update the missed score
         canvas.itemconfig(missed_text, text="Missed: " + str(missed)) #update the score text
+
+
+
+
+
+
+
+    #decrement the balloon change counter
+    balloon_change_counter -= 1
+    #if the balloon change counter is less than 0
+    if balloon_change_counter < 0:
+        #reset the balloon change counter to a random number between 60 and 120
+        balloon_change_counter = random.randint(60, 120)
+        #change the balloon direction
+        balloon_direction *= -1
+
+    #if the balloon is at the top of the screen
+    if canvas.coords(balloon)[1] <= 0:
+        #set the balloon direction to down
+        balloon_direction = 1
+    #if the balloon is at the bottom of the screen
+    if canvas.coords(balloon)[3] >= 600:
+        #set the balloon direction to up
+        balloon_direction = -1
+
+    #move the balloon
+    canvas.move(balloon, 0, balloon_speed * balloon_direction)
 
 
     #move the cannon
@@ -155,8 +202,18 @@ def update():
     
     window.after(16, update) #schedule the next update
 
+#called when the balloon is popped
+def end_game():
+    global gameOver
+    gameOver = True
+    #create the end game text
+    canvas.create_text(400, 300, text="Game Over", font=("Arial", 50))
 
+    #thank the user for playing
+    canvas.create_text(400, 350, text="Thank you for playing", font=("Arial", 20))
 
+    #credit the author
+    canvas.create_text(400, 400, text="By: Joey Nicholas - joeyn.dev", font=("Arial", 11))
 
 #start the update function
 update()
